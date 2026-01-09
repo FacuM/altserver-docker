@@ -1,0 +1,31 @@
+# AltServer certificates and signing data (sensitive)
+AltServerData/
+
+# Device pairing records (device-specific)
+data/
+
+# Log files
+log/
+
+# IPA files (user content)
+ipa/*.ipa
+
+# Keep the directories but not their contents
+!ipa/.gitkeep
+!data/.gitkeep
+!log/.gitkeep
+!AltServerData/.gitkeep
+
+# macOS
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*

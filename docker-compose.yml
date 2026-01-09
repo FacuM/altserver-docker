@@ -1,0 +1,57 @@
+services:
+  anisette:
+    image: dadoum/anisette-v3-server
+    container_name: anisette-v3
+    restart: unless-stopped
+    ports:
+      - "6969:6969"
+    volumes:
+      - anisette_data:/home/Alcoholic/.config/anisette-v3/lib/
+
+  altserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: altserver
+    restart: unless-stopped
+    depends_on:
+      - anisette
+    
+    # Required for USB device access
+    privileged: true
+    
+    # Network mode host for mDNS/Bonjour discovery
+    network_mode: host
+    
+    volumes:
+      # IPA files - place your .ipa files here
+      - ./ipa:/app/ipa
+      
+      # Persistent data (pairing records)
+      - ./data:/app/data
+      
+      # AltServer certificates and data (important for app signing)
+      - ./AltServerData:/app/AltServerData
+      
+      # Logs
+      - ./log:/app/log
+      
+      # USB device access
+      - /dev/bus/usb:/dev/bus/usb
+      
+      # usbmuxd socket from host
+      - /var/run/usbmuxd:/var/run/usbmuxd
+      
+      # D-Bus system bus
+      - /var/run/dbus:/var/run/dbus
+    
+    environment:
+      - ALTSERVER_ANISETTE_SERVER=http://127.0.0.1:6969
+      - RUST_LOG=info
+    
+    # Keep stdin open for interactive commands
+    stdin_open: true
+    tty: true
+
+volumes:
+  anisette_data:

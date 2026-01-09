@@ -1,0 +1,15 @@
+#!/bin/bash
+# Download the latest AltStore IPA
+
+VERSION="${1:-2_2}"
+
+echo "Downloading AltStore version $VERSION..."
+curl -L "https://cdn.altstore.io/file/altstore/apps/altstore/${VERSION}.ipa" > /app/ipa/AltStore.ipa
+
+if [ $? -eq 0 ]; then
+    echo "✅ Downloaded to /app/ipa/AltStore.ipa"
+    ls -lh /app/ipa/AltStore.ipa
+else
+    echo "❌ Download failed"
+    exit 1
+fi

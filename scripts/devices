@@ -1,0 +1,40 @@
+#!/bin/bash
+# List connected iOS devices
+
+echo "=========================================="
+echo "  Connected Devices"
+echo "=========================================="
+echo ""
+
+DEVICES=$(idevice_id -l 2>/dev/null)
+
+if [ -z "$DEVICES" ]; then
+    echo "No devices found."
+    echo ""
+    echo "Troubleshooting:"
+    echo "  - Connect a device via USB and run 'pair' first"
+    echo "  - For WiFi: ensure device is on same network and was previously paired"
+    exit 0
+fi
+
+for DEVICE in $DEVICES; do
+    echo "Device: $DEVICE"
+    
+    # Try to get device info
+    NAME=$(ideviceinfo -u "$DEVICE" -k DeviceName 2>/dev/null || echo "Unknown")
+    MODEL=$(ideviceinfo -u "$DEVICE" -k ProductType 2>/dev/null || echo "Unknown")
+    VERSION=$(ideviceinfo -u "$DEVICE" -k ProductVersion 2>/dev/null || echo "Unknown")
+    
+    echo "  Name:    $NAME"
+    echo "  Model:   $MODEL"
+    echo "  iOS:     $VERSION"
+    
+    # Check pairing status
+    PAIR_STATUS=$(idevicepair -u "$DEVICE" validate 2>&1)
+    if echo "$PAIR_STATUS" | grep -q "SUCCESS"; then
+        echo "  Paired:  ✅ Yes"
+    else
+        echo "  Paired:  ❌ No"
+    fi
+    echo ""
+done

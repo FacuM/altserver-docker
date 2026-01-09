@@ -1,0 +1,124 @@
+#!/bin/bash
+# Install an IPA file to a connected device
+
+show_usage() {
+    echo "Usage: install <ipa-file> <apple-id> <password>"
+    echo ""
+    echo "Arguments:"
+    echo "  ipa-file   - Name of the IPA file (in /app/ipa folder) or full path"
+    echo "  apple-id   - Your Apple ID email"
+    echo "  password   - Your Apple ID password (use app-specific password if 2FA enabled)"
+    echo ""
+    echo "Examples:"
+    echo "  install AltStore.ipa myemail@icloud.com mypassword"
+    echo "  install /app/ipa/MyApp.ipa myemail@icloud.com mypassword"
+    echo ""
+    echo "Available IPA files in /app/ipa:"
+    ls -1 /app/ipa/*.ipa 2>/dev/null || echo "  (none found)"
+}
+
+if [ $# -lt 3 ]; then
+    show_usage
+    exit 1
+fi
+
+IPA_FILE="$1"
+APPLE_ID="$2"
+PASSWORD="$3"
+
+# If not an absolute path, look in /app/ipa
+if [[ ! "$IPA_FILE" = /* ]]; then
+    IPA_FILE="/app/ipa/$IPA_FILE"
+fi
+
+if [ ! -f "$IPA_FILE" ]; then
+    echo "❌ IPA file not found: $IPA_FILE"
+    echo ""
+    show_usage
+    exit 1
+fi
+
+echo "=========================================="
+echo "  Installing IPA"
+echo "=========================================="
+echo ""
+echo "IPA File: $IPA_FILE"
+echo "Apple ID: $APPLE_ID"
+echo ""
+
+# Get device list
+DEVICES=$(idevice_id -l 2>/dev/null)
+
+if [ -z "$DEVICES" ]; then
+    echo "❌ No devices found!"
+    echo ""
+    echo "Make sure your device is:"
+    echo "  - Connected via USB, OR"
+    echo "  - On the same WiFi network and previously paired"
+    exit 1
+fi
+
+# If multiple devices, let user choose
+DEVICE_COUNT=$(echo "$DEVICES" | wc -l)
+
+if [ "$DEVICE_COUNT" -gt 1 ]; then
+    echo "Multiple devices found:"
+    echo ""
+    i=1
+    for d in $DEVICES; do
+        echo "  $i) $d"
+        i=$((i+1))
+    done
+    echo ""
+    read -p "Select device (1-$DEVICE_COUNT): " SELECTION
+    DEVICE=$(echo "$DEVICES" | sed -n "${SELECTION}p")
+else
+    DEVICE="$DEVICES"
+fi
+
+echo ""
+echo "Installing to device: $DEVICE"
+echo ""
+echo "⏳ This may take a few minutes..."
+echo ""
+
+# Run AltServer to install
+ALTSERVER_ANISETTE_SERVER=http://127.0.0.1:6969 /app/AltServer \
+    -u "$DEVICE" \
+    -a "$APPLE_ID" \
+    -p "$PASSWORD" \
+    "$IPA_FILE"
+
+EXIT_CODE=$?
+
+echo ""
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✅ Installation complete!"
+    echo ""
+    echo "=========================================="
+    echo "  ⚠️  IMPORTANT: Trust Developer Profile"
+    echo "=========================================="
+    echo ""
+    echo "Before you can open the app, you need to trust the developer profile:"
+    echo ""
+    echo "  1. On your iPhone, go to:"
+    echo "     Settings → General → VPN & Device Management"
+    echo ""
+    echo "  2. Under 'Developer App', tap your Apple ID email"
+    echo ""
+    echo "  3. Tap 'Trust \"<your Apple ID>\"'"
+    echo ""
+    echo "  4. Tap 'Trust' to confirm"
+    echo ""
+    echo "After that, you can open the app from your home screen!"
+    echo ""
+else
+    echo "❌ Installation failed (exit code: $EXIT_CODE)"
+    echo ""
+    echo "Common issues:"
+    echo "  - Invalid Apple ID credentials"
+    echo "  - Need to use app-specific password (if 2FA enabled)"
+    echo "  - Device not trusted"
+fi
+
+exit $EXIT_CODE

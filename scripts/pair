@@ -1,0 +1,49 @@
+#!/bin/bash
+# Pair an iOS device
+
+echo "=========================================="
+echo "  Device Pairing"
+echo "=========================================="
+echo ""
+echo "Make sure your iOS device is connected via USB."
+echo ""
+
+# Check for devices
+DEVICES=$(idevice_id -l 2>/dev/null)
+
+if [ -z "$DEVICES" ]; then
+    echo "❌ No devices found!"
+    echo ""
+    echo "Troubleshooting:"
+    echo "  1. Connect your device via USB"
+    echo "  2. Unlock your device"
+    echo "  3. Make sure the container has USB access"
+    exit 1
+fi
+
+echo "Found device(s):"
+echo "$DEVICES"
+echo ""
+
+for DEVICE in $DEVICES; do
+    echo "Pairing with $DEVICE..."
+    RESULT=$(idevicepair pair 2>&1)
+    
+    if echo "$RESULT" | grep -q "SUCCESS"; then
+        echo "✅ Successfully paired with $DEVICE"
+    elif echo "$RESULT" | grep -q "Please accept the trust dialog"; then
+        echo ""
+        echo "📱 Please tap 'Trust' on your device, then run this command again."
+        exit 0
+    else
+        echo "Result: $RESULT"
+    fi
+done
+
+echo ""
+echo "Validating pairing..."
+idevicepair validate
+
+echo ""
+echo "✅ Pairing complete! You can now disconnect the USB cable."
+echo "   AltStore should be able to refresh over WiFi."

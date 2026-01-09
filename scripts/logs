@@ -1,0 +1,49 @@
+#!/bin/bash
+# View service logs
+
+SERVICE="$1"
+
+show_usage() {
+    echo "Usage: logs [service]"
+    echo ""
+    echo "Services:"
+    echo "  altserver  - AltServer logs"
+    echo "  netmuxd    - netmuxd device discovery logs"
+    echo "  avahi      - Avahi mDNS logs"
+    echo "  usbmuxd    - USB multiplexer logs"
+    echo "  dbus       - D-Bus logs"
+    echo "  all        - All logs combined"
+    echo ""
+    echo "Without arguments, shows AltServer logs."
+    echo ""
+    echo "For Anisette logs, run: docker logs anisette-v3"
+}
+
+case "$SERVICE" in
+    "altserver"|"")
+        tail -f /app/log/altserver.log
+        ;;
+    "netmuxd")
+        tail -f /app/log/netmuxd.log
+        ;;
+    "avahi")
+        tail -f /app/log/avahi.log
+        ;;
+    "usbmuxd")
+        tail -f /app/log/usbmuxd.log
+        ;;
+    "dbus")
+        tail -f /app/log/dbus.log
+        ;;
+    "all")
+        tail -f /app/log/*.log
+        ;;
+    "-h"|"--help")
+        show_usage
+        ;;
+    *)
+        echo "Unknown service: $SERVICE"
+        show_usage
+        exit 1
+        ;;
+esac
